@@ -19,10 +19,19 @@ def render_svg(data, theme, profile=None, portrait=None):
         raise ValueError('Expected a light or dark template')
     profile = profile if profile is not None else json.loads((ROOT / 'assets/profile.json').read_text(encoding='utf-8'))
     portrait = portrait if portrait is not None else json.loads((ROOT / 'assets/portrait-ascii.json').read_text(encoding='utf-8'))
-    if portrait.get('columns') != 38 or len(portrait.get('rows', [])) != 25:
+    if portrait.get('columns') != 76 or portrait.get('row_count') != 66:
         raise ValueError('Portrait must fit the template character grid')
-    if any(len(line) != 38 or any(ord(char) < 32 or ord(char) > 126 for char in line) for line in portrait['rows']):
-        raise ValueError('Invalid portrait glyph row')
+    for rows_key in ('light_rows', 'dark_rows'):
+        rows = portrait.get(rows_key)
+        if not isinstance(rows, list) or len(rows) != 66:
+            raise ValueError('Both themed portrait grids are required')
+        if any(not isinstance(line, str) or len(line) != 76 or any(ord(char) < 32 or ord(char) > 126 for char in line) for line in rows):
+            raise ValueError('Invalid portrait glyph row')
+    for key in ('font_size', 'line_height', 'baseline_y', 'width'):
+        if type(portrait.get(key)) not in (int, float) or not 0 < portrait[key] < 530:
+            raise ValueError('Invalid portrait geometry')
+    if portrait['width'] > 360 or portrait['font_size'] > portrait['line_height'] * 1.2 or portrait['baseline_y'] < portrait['font_size'] or portrait['baseline_y'] + 65 * portrait['line_height'] > 515:
+        raise ValueError('Portrait exceeds the template bounds')
     root = ET.parse(ROOT / 'templates' / f'{theme}_mode.svg').getroot()
     root.set('role', 'img')
     root.set('aria-labelledby', 'title desc')
@@ -40,8 +49,12 @@ def render_svg(data, theme, profile=None, portrait=None):
     for child in list(art):
         art.remove(child)
     art.text = '\n'
-    for index, line in enumerate(portrait['rows']):
-        span = ET.SubElement(art, f'{{{NS}}}tspan', {'x': '15', 'y': str(30 + index * 20)})
+    for index, line in enumerate(portrait[theme + '_rows']):
+        span = ET.SubElement(art, f'{{{NS}}}tspan', {
+            'x': '15', 'y': f'{portrait["baseline_y"] + index * portrait["line_height"]:.6f}',
+            'font-size': str(portrait['font_size']), 'font-weight': '700',
+            'textLength': str(portrait['width']), 'lengthAdjust': 'spacingAndGlyphs',
+        })
         span.text = line
         span.tail = '\n'
 

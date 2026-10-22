@@ -37,7 +37,13 @@ class ActualTemplateTests(unittest.TestCase):
                 self.assertEqual(rendered.find(NS + 'rect').attrib, original.find(NS + 'rect').attrib)
                 art, rows = rendered.findall(NS + 'text')
                 self.assertEqual(art.attrib, original.findall(NS + 'text')[0].attrib)
-                self.assertEqual([line.attrib['y'] for line in art], [str(30 + index * 20) for index in range(25)])
+                portrait = json.loads((PROJECT / 'assets/portrait-ascii.json').read_text(encoding='utf-8'))
+                self.assertEqual(len(art), portrait['row_count'])
+                self.assertEqual([line.attrib['y'] for line in art], [f'{portrait["baseline_y"] + index * portrait["line_height"]:.6f}' for index in range(portrait['row_count'])])
+                for line in art:
+                    self.assertGreaterEqual(float(line.attrib['y']) - float(line.attrib['font-size']), 0)
+                    self.assertLessEqual(float(line.attrib['y']), 515)
+                    self.assertLessEqual(float(line.attrib['x']) + float(line.attrib['textLength']), 375)
                 self.assertEqual(rows.attrib, original.findall(NS + 'text')[1].attrib)
                 y_values = {element.attrib.get('y') for element in rows}
                 self.assertTrue({'30', '50', '70', '90', '110', '130', '170', '190', '210', '250', '270', '310', '330', '350', '370', '390', '410', '450', '470', '490', '510'}.issubset(y_values))
@@ -51,7 +57,28 @@ class ActualTemplateTests(unittest.TestCase):
                 self.assertIn(expected, content)
             for stale in ('Andrew Grant', 'andrew@grant', 'TTM Technologies', 'Minecraft Modding', 'CAMERA INPUT', 'PUBLIC / AI + IOT'):
                 self.assertNotIn(stale, content)
-            self.assertEqual([element.text for element in root.findall(NS + 'text')[0]], portrait['rows'])
+            self.assertEqual([element.text for element in root.findall(NS + 'text')[0]], portrait[theme + '_rows'])
+
+    def test_themes_use_separate_portrait_maps_and_preserve_the_background_mask(self):
+        portrait = json.loads((PROJECT / 'assets/portrait-ascii.json').read_text(encoding='utf-8'))
+        self.assertGreaterEqual(portrait['columns'], 70)
+        self.assertGreaterEqual(portrait['row_count'], 60)
+        self.assertNotEqual(portrait['light_rows'], portrait['dark_rows'])
+        # The corners outside the head remain empty under either polarity.
+        for key in ('light_rows', 'dark_rows'):
+            self.assertEqual(portrait[key][0][:10], ' ' * 10)
+            self.assertEqual(portrait[key][0][-10:], ' ' * 10)
+            self.assertGreater(len(set(''.join(portrait[key]))), 6)
+
+    def test_missing_theme_or_geometry_cannot_silently_restore_the_old_portrait(self):
+        portrait = json.loads((PROJECT / 'assets/portrait-ascii.json').read_text(encoding='utf-8'))
+        del portrait['dark_rows']
+        with self.assertRaisesRegex(ValueError, 'Both themed'):
+            today.render_svg(snapshot(), 'dark', portrait=portrait)
+        portrait = json.loads((PROJECT / 'assets/portrait-ascii.json').read_text(encoding='utf-8'))
+        portrait['width'] = 390
+        with self.assertRaisesRegex(ValueError, 'template bounds'):
+            today.render_svg(snapshot(), 'light', portrait=portrait)
 
     def test_upstream_dynamic_ids_display_the_aggregate_snapshot(self):
         root = ET.fromstring(today.render_svg(snapshot(), 'light'))
