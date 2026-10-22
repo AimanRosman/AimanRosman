@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 260" role="img" aria-labelledby="title desc">
+  <title id="title">From pixels to physical systems</title>
+  <desc id="desc">A camera frame, a vision processing diagram, and a microcontroller connected to an output. A schematic illustration of Aiman Rosman's public projects.</desc>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#19364A" stroke-opacity=".045"/></pattern>
+    <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="m1 1 5 3-5 3" fill="none" stroke="#287D83" stroke-width="1.4"/></marker>
+  </defs>
+  <rect width="1000" height="260" rx="16" fill="#EEF4F7"/>
+  <rect width="1000" height="260" rx="16" fill="url(#grid)"/>
+  <g font-family="Segoe UI,Arial,sans-serif" fill="#19364A">
+    <text x="38" y="51" font-size="30" font-weight="650">From pixels to physical systems.</text>
+    <text x="38" y="232" font-size="18">Camera input</text>
+    <text x="352" y="232" font-size="18">Vision processing</text>
+    <text x="690" y="232" font-size="18">Embedded output</text>
+  </g>
+  <g fill="none" stroke="#3568C8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M38 116V88h28m118 0h28v28m0 56v28h-28m-118 0H38v-28"/>
+    <rect x="80" y="102" width="90" height="85" rx="7" stroke-dasharray="5 6" stroke-opacity=".45"/>
+    <path d="M102 128q23-23 46 0m-40 35q17 12 34 0" stroke-opacity=".5"/>
+    <path d="M124 137v12h8" stroke-opacity=".5"/>
+  </g>
+  <g fill="#287D83"><circle cx="104" cy="136" r="5"/><circle cx="145" cy="136" r="5"/><circle cx="124" cy="151" r="4"/><circle cx="108" cy="163" r="4"/><circle cx="142" cy="163" r="4"/></g>
+  <g fill="none" stroke="#287D83" stroke-width="2.5" marker-end="url(#arrow)"><path d="M242 146h79"/><path d="M558 146h78"/></g>
+  <g fill="none" stroke="#3568C8" stroke-width="2" stroke-opacity=".45"><path d="m380 110 60 34-60 34m0-68 60 68-60-34 60-34m0 0 60 34-60 34m0-68 60 68-60-34 60-34"/></g>
+  <g fill="#3568C8"><circle cx="380" cy="110" r="9"/><circle cx="380" cy="144" r="9"/><circle cx="380" cy="178" r="9"/><circle cx="440" cy="110" r="9"/><circle cx="440" cy="144" r="9"/><circle cx="440" cy="178" r="9"/></g>
+  <g fill="#287D83"><circle cx="500" cy="144" r="11"/></g>
+  <g stroke="#19364A" stroke-width="2.5" fill="none" stroke-linecap="round">
+    <rect x="685" y="102" width="83" height="84" rx="8"/>
+    <rect x="706" y="123" width="41" height="42" rx="3" stroke="#3568C8"/>
+    <path d="M699 94v8m18-8v8m18-8v8m18-8v8m-54 84v8m18-8v8m18-8v8m18-8v8M677 116h8m-8 19h8m-8 19h8m-8 19h8m83-57h9m-9 19h9m-9 19h9m-9 19h9"/>
+    <path d="M777 144h39v-31h36m-36 31v34h36" stroke="#287D83"/>
+    <circle cx="872" cy="113" r="15" stroke="#A46F40"/>
+    <path d="M864 113h16m-8-8v16" stroke="#A46F40"/>
+    <rect x="857" y="166" width="30" height="25" rx="3" stroke="#A46F40"/>
+    <path d="M864 166v-8h16v8" stroke="#A46F40"/>
+  </g>
+</svg>
