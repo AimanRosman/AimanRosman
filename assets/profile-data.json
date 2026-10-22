@@ -1,8 +1,13 @@
 {
   "username": "AimanRosman",
-  "public_repositories": 16,
+  "public_repositories": 15,
   "public_original_repo_stars": 4,
   "followers": 10,
   "account_since": "2024",
-  "updated_utc": "2026-10-22"
+  "updated_utc": "2026-10-22",
+  "authored_commits": 157,
+  "contributed_repositories": 15,
+  "additions": 64457,
+  "deletions": 3518,
+  "net_lines": 60939
 }

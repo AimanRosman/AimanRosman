@@ -1,4 +1,4 @@
-name: Refresh terminal profile cards
+name: Refresh public profile metadata
 
 on:
   schedule:
@@ -7,8 +7,12 @@ on:
   push:
     branches: [main]
     paths:
-      - scripts/generate_profile.py
-      - tests/test_generate_profile.py
+      - today.py
+      - public_stats.py
+      - tests/**
+      - assets/profile.json
+      - assets/portrait-ascii.json
+      - templates/*.svg
       - .github/workflows/profile-card.yml
 
 permissions: {}
@@ -20,30 +24,31 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
-      - name: Check out the generator
+      - name: Check out the updater and template inputs
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: main
           persist-credentials: false
-      - name: Validate Python syntax
+      - name: Validate updater syntax
         shell: bash
         run: |
           python3 - <<'PY'
           import ast
           from pathlib import Path
-          ast.parse(Path('scripts/generate_profile.py').read_text(encoding='utf-8'))
+          for name in ('today.py', 'public_stats.py'):
+              ast.parse(Path(name).read_text(encoding='utf-8'), filename=name)
           PY
-      - name: Check public data boundaries and rendering
+      - name: Test public data boundaries and template rendering
         run: python3 -m unittest discover -s tests -v
-      - name: Generate cards from public GitHub data
+      - name: Update the template from public GitHub data
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: python3 scripts/generate_profile.py
-      - name: Validate the generated assets
+        run: python3 today.py
+      - name: Validate the three generated assets
         shell: bash
         run: |
           python3 - <<'PY'
@@ -54,15 +59,9 @@ jobs:
           assets = Path('assets')
           if assets.is_symlink() or not assets.is_dir():
               raise SystemExit('Expected a regular assets directory')
-          names = (
-              'profile-terminal-light.svg',
-              'profile-terminal-dark.svg',
-              'profile-terminal-mobile-light.svg',
-              'profile-terminal-mobile-dark.svg',
-              'profile-data.json',
-          )
+          names = ('light_mode.svg', 'dark_mode.svg', 'assets/profile-data.json')
           for name in names:
-              path = assets / name
+              path = Path(name)
               if path.is_symlink() or not path.is_file() or not 0 < path.stat().st_size <= 10_000_000:
                   raise SystemExit(f'Invalid generated asset: {name}')
               if path.suffix == '.svg':
@@ -71,15 +70,13 @@ jobs:
               else:
                   json.loads(path.read_text(encoding='utf-8'))
           PY
-      - name: Save only the generated profile assets
+      - name: Save only the generated template assets
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: terminal-profile-assets
+          name: profile-template-assets
           path: |
-            assets/profile-terminal-light.svg
-            assets/profile-terminal-dark.svg
-            assets/profile-terminal-mobile-light.svg
-            assets/profile-terminal-mobile-dark.svg
+            light_mode.svg
+            dark_mode.svg
             assets/profile-data.json
           if-no-files-found: error
           retention-days: 1
@@ -96,15 +93,15 @@ jobs:
         with:
           ref: main
           persist-credentials: false
-      - name: Download assets from this run
+      - name: Download this run's template assets
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
-          name: terminal-profile-assets
-          path: ${{ runner.temp }}/terminal-profile-assets
-      - name: Commit only the five generated assets
+          name: profile-template-assets
+          path: ${{ runner.temp }}/profile-template-assets
+      - name: Commit only the three generated assets
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PROFILE_ARTIFACT_DIR: ${{ runner.temp }}/terminal-profile-assets
+          PROFILE_ARTIFACT_DIR: ${{ runner.temp }}/profile-template-assets
         shell: bash
         run: |
           python3 - <<'PY'
@@ -116,22 +113,21 @@ jobs:
           import subprocess
           import xml.etree.ElementTree as ET
 
-          names = (
-              'profile-terminal-light.svg',
-              'profile-terminal-dark.svg',
-              'profile-terminal-mobile-light.svg',
-              'profile-terminal-mobile-dark.svg',
-              'profile-data.json',
-          )
+          names = ('light_mode.svg', 'dark_mode.svg', 'assets/profile-data.json')
           artifact = Path(os.environ['PROFILE_ARTIFACT_DIR'])
           if artifact.is_symlink() or not artifact.is_dir():
               raise SystemExit('Missing profile artifact directory')
-          if {path.name for path in artifact.iterdir()} != set(names):
+          entries = list(artifact.rglob('*'))
+          if any(path.is_symlink() or not (path.is_file() or path.is_dir()) for path in entries):
+              raise SystemExit('Invalid entry in profile artifact')
+          files = {path.relative_to(artifact).as_posix() for path in entries if path.is_file()}
+          directories = {path.relative_to(artifact).as_posix() for path in entries if path.is_dir()}
+          if files != set(names) or directories != {'assets'}:
               raise SystemExit('Unexpected profile artifact contents')
           for name in names:
               path = artifact / name
-              if path.is_symlink() or not path.is_file() or not 0 < path.stat().st_size <= 10_000_000:
-                  raise SystemExit(f'Invalid profile artifact: {name}')
+              if not 0 < path.stat().st_size <= 10_000_000:
+                  raise SystemExit(f'Invalid profile artifact size: {name}')
               if path.suffix == '.svg':
                   if ET.parse(path).getroot().tag != '{http://www.w3.org/2000/svg}svg':
                       raise SystemExit(f'Expected an SVG document: {name}')
@@ -143,25 +139,24 @@ jobs:
               raise SystemExit('Refusing a symlinked assets directory')
           assets.mkdir(exist_ok=True)
           for name in names:
-              destination = assets / name
+              destination = Path(name)
               if destination.is_symlink() or (destination.exists() and not destination.is_file()):
                   raise SystemExit(f'Invalid publication destination: {name}')
               shutil.copyfile(artifact / name, destination)
 
-          paths = [f'assets/{name}' for name in names]
-          subprocess.run(['git', 'add', '--', *paths], check=True)
+          subprocess.run(['git', 'add', '--', *names], check=True)
           staged = subprocess.check_output(['git', 'diff', '--cached', '--name-only', '-z'])
           changed = {path.decode('utf-8') for path in staged.split(b'\0') if path}
-          if not changed.issubset(set(paths)):
+          if not changed.issubset(set(names)):
               raise SystemExit('Refusing to publish unexpected staged paths')
           if not changed:
-              print('Profile assets are unchanged')
+              print('Public profile assets are unchanged')
               raise SystemExit(0)
 
           subprocess.run([
               'git', '-c', 'user.name=github-actions[bot]',
               '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com',
-              'commit', '-m', 'docs: refresh terminal profile cards',
+              'commit', '-m', 'docs: refresh public profile metadata',
           ], check=True)
 
           token = os.environ['GITHUB_TOKEN']
