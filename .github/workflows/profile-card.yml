@@ -1,0 +1,182 @@
+name: Refresh terminal profile cards
+
+on:
+  schedule:
+    - cron: '41 3 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/generate_profile.py
+      - tests/test_generate_profile.py
+      - .github/workflows/profile-card.yml
+
+permissions: {}
+
+concurrency:
+  group: terminal-profile-cards
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the generator
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Validate Python syntax
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          ast.parse(Path('scripts/generate_profile.py').read_text(encoding='utf-8'))
+          PY
+      - name: Check public data boundaries and rendering
+        run: python3 -m unittest discover -s tests -v
+      - name: Generate cards from public GitHub data
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/generate_profile.py
+      - name: Validate the generated assets
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          assets = Path('assets')
+          if assets.is_symlink() or not assets.is_dir():
+              raise SystemExit('Expected a regular assets directory')
+          names = (
+              'profile-terminal-light.svg',
+              'profile-terminal-dark.svg',
+              'profile-terminal-mobile-light.svg',
+              'profile-terminal-mobile-dark.svg',
+              'profile-data.json',
+          )
+          for name in names:
+              path = assets / name
+              if path.is_symlink() or not path.is_file() or not 0 < path.stat().st_size <= 10_000_000:
+                  raise SystemExit(f'Invalid generated asset: {name}')
+              if path.suffix == '.svg':
+                  if ET.parse(path).getroot().tag != '{http://www.w3.org/2000/svg}svg':
+                      raise SystemExit(f'Expected an SVG document: {name}')
+              else:
+                  json.loads(path.read_text(encoding='utf-8'))
+          PY
+      - name: Save only the generated profile assets
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: terminal-profile-assets
+          path: |
+            assets/profile-terminal-light.svg
+            assets/profile-terminal-dark.svg
+            assets/profile-terminal-mobile-light.svg
+            assets/profile-terminal-mobile-dark.svg
+            assets/profile-data.json
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: generate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Check out main for publication
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Download assets from this run
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: terminal-profile-assets
+          path: ${{ runner.temp }}/terminal-profile-assets
+      - name: Commit only the five generated assets
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PROFILE_ARTIFACT_DIR: ${{ runner.temp }}/terminal-profile-assets
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+          from pathlib import Path
+          import shutil
+          import subprocess
+          import xml.etree.ElementTree as ET
+
+          names = (
+              'profile-terminal-light.svg',
+              'profile-terminal-dark.svg',
+              'profile-terminal-mobile-light.svg',
+              'profile-terminal-mobile-dark.svg',
+              'profile-data.json',
+          )
+          artifact = Path(os.environ['PROFILE_ARTIFACT_DIR'])
+          if artifact.is_symlink() or not artifact.is_dir():
+              raise SystemExit('Missing profile artifact directory')
+          if {path.name for path in artifact.iterdir()} != set(names):
+              raise SystemExit('Unexpected profile artifact contents')
+          for name in names:
+              path = artifact / name
+              if path.is_symlink() or not path.is_file() or not 0 < path.stat().st_size <= 10_000_000:
+                  raise SystemExit(f'Invalid profile artifact: {name}')
+              if path.suffix == '.svg':
+                  if ET.parse(path).getroot().tag != '{http://www.w3.org/2000/svg}svg':
+                      raise SystemExit(f'Expected an SVG document: {name}')
+              else:
+                  json.loads(path.read_text(encoding='utf-8'))
+
+          assets = Path('assets')
+          if assets.is_symlink():
+              raise SystemExit('Refusing a symlinked assets directory')
+          assets.mkdir(exist_ok=True)
+          for name in names:
+              destination = assets / name
+              if destination.is_symlink() or (destination.exists() and not destination.is_file()):
+                  raise SystemExit(f'Invalid publication destination: {name}')
+              shutil.copyfile(artifact / name, destination)
+
+          paths = [f'assets/{name}' for name in names]
+          subprocess.run(['git', 'add', '--', *paths], check=True)
+          staged = subprocess.check_output(['git', 'diff', '--cached', '--name-only', '-z'])
+          changed = {path.decode('utf-8') for path in staged.split(b'\0') if path}
+          if not changed.issubset(set(paths)):
+              raise SystemExit('Refusing to publish unexpected staged paths')
+          if not changed:
+              print('Profile assets are unchanged')
+              raise SystemExit(0)
+
+          subprocess.run([
+              'git', '-c', 'user.name=github-actions[bot]',
+              '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com',
+              'commit', '-m', 'docs: refresh terminal profile cards',
+          ], check=True)
+
+          token = os.environ['GITHUB_TOKEN']
+          encoded = base64.b64encode(f'x-access-token:{token}'.encode()).decode()
+          header = f'AUTHORIZATION: basic {encoded}'
+          print(f'::add-mask::{encoded}', flush=True)
+          print(f'::add-mask::{header}', flush=True)
+          git_environment = os.environ.copy()
+          git_environment.update({
+              'GIT_CONFIG_COUNT': '1',
+              'GIT_CONFIG_KEY_0': 'http.https://github.com/.extraheader',
+              'GIT_CONFIG_VALUE_0': header,
+          })
+          subprocess.run(
+              ['git', 'push', 'origin', 'HEAD:refs/heads/main'],
+              check=True, env=git_environment,
+          )
+          PY
