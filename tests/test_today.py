@@ -50,14 +50,39 @@ class ActualTemplateTests(unittest.TestCase):
 
     def test_only_supplied_identity_and_actual_portrait_reach_the_output(self):
         portrait = json.loads((PROJECT / 'assets/portrait-ascii.json').read_text(encoding='utf-8'))
+        profile = json.loads((PROJECT / 'assets/profile.json').read_text(encoding='utf-8'))
         for theme in ('light', 'dark'):
             root = ET.fromstring(today.render_svg(snapshot(), theme))
             content = ''.join(root.itertext())
-            for expected in ('aiman@rosman', '23 years', 'AI & IoT Manager', 'Mandarin, English, Malay'):
+            for expected in ('aiman@rosman', '23 years', profile['role'], 'Mandarin, English, Malay'):
                 self.assertIn(expected, content)
             for stale in ('Andrew Grant', 'andrew@grant', 'TTM Technologies', 'Minecraft Modding', 'CAMERA INPUT', 'PUBLIC / AI + IOT'):
                 self.assertNotIn(stale, content)
             self.assertEqual([element.text for element in root.findall(NS + 'text')[0]], portrait[theme + '_rows'])
+
+    def test_requested_full_title_and_versioned_editors_fit_the_existing_card(self):
+        title = 'Artificial Intelligence & Internet of Things Manager'
+        profile = json.loads((PROJECT / 'assets/profile.json').read_text(encoding='utf-8'))
+        profile.update({'role': title, 'os': 'Windows 10, Kali Linux, Ubuntu',
+                        'ide': 'VSCode 1.141.1, Codex 26.1021.31345'})
+        for theme in ('light', 'dark'):
+            root = ET.fromstring(today.render_svg(snapshot(), theme, profile=profile))
+            content = ''.join(root.itertext())
+            self.assertIn('Windows 10, Kali Linux, Ubuntu', content)
+            self.assertIn('VSCode 1.141.1, Codex 26.1021.31345', content)
+            values = [element for element in root.findall(NS + 'text')[1] if element.text == title]
+            self.assertEqual(len(values), 1)
+            self.assertEqual(values[0].attrib['lengthAdjust'], 'spacingAndGlyphs')
+            self.assertLessEqual(float(values[0].attrib['x']) + float(values[0].attrib['textLength']), 970)
+
+    def test_short_kernel_titles_retain_normal_dot_leaders(self):
+        profile = json.loads((PROJECT / 'assets/profile.json').read_text(encoding='utf-8'))
+        profile['role'] = 'AI & IoT Manager'
+        root = ET.fromstring(today.render_svg(snapshot(), 'light', profile=profile))
+        spans = list(root.findall(NS + 'text')[1])
+        index = next(index for index, element in enumerate(spans) if element.text == 'AI & IoT Manager')
+        self.assertIn('...', spans[index - 1].text)
+        self.assertNotIn('textLength', spans[index].attrib)
 
     def test_themes_use_separate_portrait_maps_and_preserve_the_background_mask(self):
         portrait = json.loads((PROJECT / 'assets/portrait-ascii.json').read_text(encoding='utf-8'))

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" font-family="ConsolasFallback,Consolas,monospace" width="985px" height="530px" font-size="16px" role="img" aria-labelledby="title desc">
-<title id="title">Aiman Rosman's GitHub Profile README</title><desc id="desc">Aiman Rosman, AI &amp; IoT Manager. ASCII portrait from his supplied photograph. 15 public repositories, 160 authored public commits, 12 followers. Updated 2026-10-25 UTC. Lines of Code is additions minus deletions in authored public default-branch history.</desc><style>
+<title id="title">Aiman Rosman's GitHub Profile README</title><desc id="desc">Aiman Rosman, Artificial Intelligence &amp; Internet of Things Manager. ASCII portrait from his supplied photograph. 15 public repositories, 160 authored public commits, 12 followers. Updated 2026-10-25 UTC. Lines of Code is additions minus deletions in authored public default-branch history.</desc><style>
 @font-face {
 src: local('Consolas'), local('Consolas Bold');
 font-family: 'ConsolasFallback';
@@ -86,11 +86,11 @@ text, tspan {white-space: pre;}
 </text>
 <text x="390" y="30" fill="#24292f">
 <tspan x="390" y="30">aiman@rosman</tspan> ———————————————————————————————————————————————
-<tspan x="390" y="50" class="cc">. </tspan><tspan class="key">OS</tspan>:<tspan class="cc"> .............................................. </tspan><tspan class="value">Windows</tspan>
+<tspan x="390" y="50" class="cc">. </tspan><tspan class="key">OS</tspan>:<tspan class="cc"> ....................... </tspan><tspan class="value">Windows 10, Kali Linux, Ubuntu</tspan>
 <tspan x="390" y="70" class="cc">. </tspan><tspan class="key">Uptime</tspan>:<tspan class="cc"> ......................................... </tspan><tspan class="value">23 years</tspan>
 <tspan x="390" y="90" class="cc">. </tspan><tspan class="key">Host</tspan>:<tspan class="cc"> ..................................... </tspan><tspan class="value">Koyo Corporate</tspan>
-<tspan x="390" y="110" class="cc">. </tspan><tspan class="key">Kernel</tspan>:<tspan class="cc"> ................................. </tspan><tspan class="value">AI &amp; IoT Manager</tspan>
-<tspan x="390" y="130" class="cc">. </tspan><tspan class="key">IDE</tspan>:<tspan class="cc"> ....................................... </tspan><tspan class="value">VSCode, Codex</tspan>
+<tspan x="390" y="110" class="cc">. </tspan><tspan class="key">Kernel</tspan>:<tspan class="cc"> </tspan><tspan class="value" x="490" textLength="480" lengthAdjust="spacingAndGlyphs">Artificial Intelligence &amp; Internet of Things Manager</tspan>
+<tspan x="390" y="130" class="cc">. </tspan><tspan class="key">IDE</tspan>:<tspan class="cc"> ................. </tspan><tspan class="value">VSCode 1.141.1, Codex 26.1021.31345</tspan>
 <tspan x="390" y="170" class="cc">. </tspan><tspan class="key">Languages</tspan>.<tspan class="key">Programming</tspan>:<tspan class="cc"> ...... </tspan><tspan class="value">Python, JavaScript, SQL, C++</tspan>
 <tspan x="390" y="190" class="cc">. </tspan><tspan class="key">Languages</tspan>.<tspan class="key">Computer</tspan>:<tspan class="cc"> ................ </tspan><tspan class="value">HTML, CSS, JSON, YAML</tspan>
 <tspan x="390" y="210" class="cc">. </tspan><tspan class="key">Languages</tspan>.<tspan class="key">Real</tspan>:<tspan class="cc"> ................. </tspan><tspan class="value">Mandarin, English, Malay</tspan>

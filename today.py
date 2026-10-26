@@ -92,10 +92,16 @@ def render_svg(data, theme, profile=None, portrait=None):
             item = span(key, css='key')
             item.tail = '.' if index < len(keys) - 1 else ':'
         padding = 60 - (2 + len(label) + 1 + len(value) + 2)
-        if padding < 1:
+        fit_kernel = padding < 1 and label == 'Kernel' and len(value) <= 60
+        if padding < 1 and not fit_kernel:
             raise ValueError('Profile field exceeds the template width: ' + label)
-        span(' ' + '.' * padding + ' ', css='cc')
+        span(' ' if fit_kernel else ' ' + '.' * padding + ' ', css='cc')
         item = span(value, css='value')
+        if fit_kernel:
+            # Preserve the full title on one row within the existing card.
+            item.set('x', '490')
+            item.set('textLength', '480')
+            item.set('lengthAdjust', 'spacingAndGlyphs')
         item.tail = '\n'
 
     for y, label, key in (

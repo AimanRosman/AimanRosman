@@ -1,10 +1,10 @@
 {
   "handle": "aiman@rosman",
-  "os": "Windows",
+  "os": "Windows 10, Kali Linux, Ubuntu",
   "age": "23 years",
   "host": "Koyo Corporate",
-  "role": "AI & IoT Manager",
-  "ide": "VSCode, Codex",
+  "role": "Artificial Intelligence & Internet of Things Manager",
+  "ide": "VSCode 1.141.1, Codex 26.1021.31345",
   "programming": "Python, JavaScript, SQL, C++",
   "computer_languages": "HTML, CSS, JSON, YAML",
   "spoken_languages": "Mandarin, English, Malay",
