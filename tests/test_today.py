@@ -46,7 +46,7 @@ class ActualTemplateTests(unittest.TestCase):
                     self.assertLessEqual(float(line.attrib['x']) + float(line.attrib['textLength']), 375)
                 self.assertEqual(rows.attrib, original.findall(NS + 'text')[1].attrib)
                 y_values = {element.attrib.get('y') for element in rows}
-                self.assertTrue({'30', '50', '70', '90', '110', '130', '170', '190', '210', '250', '270', '310', '330', '350', '370', '390', '410', '450', '470', '490', '510'}.issubset(y_values))
+                self.assertTrue({'30', '50', '70', '90', '110', '130', '170', '190', '210', '250', '270', '310', '330', '350', '370', '390', '450', '470', '490', '510'}.issubset(y_values))
 
     def test_only_supplied_identity_and_actual_portrait_reach_the_output(self):
         portrait = json.loads((PROJECT / 'assets/portrait-ascii.json').read_text(encoding='utf-8'))

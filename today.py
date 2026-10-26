@@ -114,7 +114,7 @@ def render_svg(data, theme, profile=None, portrait=None):
         (270, 'Hobbies.Other', 'hardware_hobbies'),
         (330, 'Website.Personal', 'portfolio'),
         (350, 'GitHub', 'github'), (370, 'Location', 'location'),
-        (390, 'LinkedIn', 'linkedin'), (410, 'Contact', 'contact'),
+        (390, 'LinkedIn', 'linkedin'),
     ):
         if y == 330:
             section = span('- Contact', y=310)
